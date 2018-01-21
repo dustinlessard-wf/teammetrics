@@ -1,91 +1,110 @@
-import 'metrics.dart';
+import 'package:aqueduct/aqueduct.dart';
+import 'dart:async';
+import 'dart:io';
 import 'package:w_transport/w_transport.dart' as transport;
 import 'package:w_transport/vm.dart';
 
-/// This class handles setting up this application.
+/// http://localhost:8081/support?room=2750828&team=AaronLademann,ClaireSarsam,CorwinSheahan,DustinLessard,EvanWeible,GregLittlefield,JaceHensley,JayUdey,MaxPeterson,ToddBeckman,TrentGrover,SebastianMalysa
 ///
-/// Override methods from [RequestSink] to set up the resources your
-/// application uses and the routes it exposes.
-///
-/// See the documentation in this file for the constructor, [setupRouter] and [willOpen]
-/// for the purpose and order of the initialization methods.
-///
-/// Instances of this class are the type argument to [Application].
-/// See http://aqueduct.io/docs/http/request_sink
-/// for more details.
-class MetricsSink extends RequestSink {
-  /// Constructor called for each isolate run by an [Application].
-  ///
-  /// This constructor is called for each isolate an [Application] creates to serve requests.
-  /// The [appConfig] is made up of command line arguments from `aqueduct serve`.
-  ///
-  /// Configuration of database connections, [HTTPCodecRepository] and other per-isolate resources should be done in this constructor.
-  MetricsSink(ApplicationConfiguration appConfig) : super(appConfig) {
+
+class HipchatController extends HTTPController {
+  //To get a Hipchat room id, login online and look at the details for a room.  The room-id is in the url.  ie: 2750828
+
+  HipchatController() : super() {
+    responseContentType = ContentType.HTML;
     configureWTransportForVM();
-    logger.onRecord.listen((rec) => print("$rec ${rec.error ?? ""} ${rec.stackTrace ?? ""}"));
+    logger.onRecord.listen(
+        (rec) => print("$rec ${rec.error ?? ""} ${rec.stackTrace ?? ""}"));
   }
 
-  /// All routes must be configured in this method.
-  ///
-  /// This method is invoked after the constructor and before [willOpen] Routes must be set up in this method, as
-  /// the router gets 'compiled' after this method completes and routes cannot be added later.
-  @override
-  void setupRouter(Router router) {
-    // Prefer to use `pipe` and `generate` instead of `listen`.
-    // See: https://aqueduct.io/docs/http/request_controller/
-    router
-      .route("/example")
-      .listen((request) async {
-        String response = await test();
+  List<String> teamPeople = [];
+  Map<String, String> headers = {
+    'Authorization': 'Bearer R54dpHZGQV8HUAtjUIaEqlpCYEboJwEPl63AfZIz'
+  };
 
-
-        return new Response.ok(response);
-      });
+  getRoomName(String roomId) async {
+    return transport.Http
+        .get(Uri.parse('https://api.hipchat.com/v2/room/$roomId'),
+            headers: headers)
+        .then((transport.Response response) {
+      return response.body.asJson()['name'];
+    });
   }
 
-  List<String> teamPeople = ['AaronLademann', 'ClaireSarsam', 'CorwinSheahan',
-  'DustinLessard', 'EvanWeible', 'JaceHensley', 'JayUdey', 'MaxPeterson',
-  'ToddBeckman', 'SebastianMalysa', 'TrentGrover'];
+  @httpGet
+  Future<Response> getSupport(@HTTPQuery("room") String room,
+      {@HTTPQuery("team") String team, @HTTPQuery("start") String start, @HTTPQuery("end") String end}) async {
+    teamPeople = team.split(',');
 
-  Future parseForTeamBreakdown(r) async{
+    DateTime endDate = end != null ? DateTime.parse(end) : new DateTime.now();
+    print(endDate.toIso8601String());
+    DateTime startDate = start!=null ? DateTime.parse(start) : new DateTime.now().subtract(new Duration(days:30));
+
+
+    String headHtml =
+        '<head><script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>'
+        '<div id="piechart" style="width: 900px; height: 500px;"></div></head>';
+
+    String roomName = await getRoomName(room);
+    print('roomName:$roomName');
+
+    Map<String, dynamic> json = await transport.Http
+        .get(
+            Uri.parse(
+                'https://api.hipchat.com/v2/room/$room/history?max-results=1000&date=${endDate.toIso8601String()}&end-date=${startDate.toIso8601String()}'),
+            headers: headers)
+        .then(parseForTeamBreakdown);
+
+    String pToM = '';
+    json.forEach((String key, dynamic value) {
+      pToM += '["$key", $value],';
+    });
+    //print(json);
+//        return new Response.ok(json);
+    String peopleMessages = pToM; //'["Max", 81],["Aaron", 18]';
+    String js =
+        "google.charts.load('current', {'packages':['corechart']});google.charts.setOnLoadCallback(drawChart);function drawChart() {var data = google.visualization.arrayToDataTable([['Person', 'Messages  in Support'],$peopleMessages]);var options = {title: 'Support Participation in $roomName'};var chart = new google.visualization.PieChart(document.getElementById('piechart'));chart.draw(data, options);}";
+
+    return new Response.ok(
+        '<html>${headHtml}<script type="application/javascript">${js}</script><body></body></html>');
+  }
+
+  Future<Map<String, dynamic>> parseForTeamBreakdown(r) async {
     transport.Response response = r;
     Map<String, dynamic> responseBody = response.body.asJson();
+    //print(responseBody);
     List<dynamic> items = responseBody['items'];
     Map<String, dynamic> personToCount = {};
-    personToCount['count'] = items.length;
+//    personToCount['count'] = items.length;
     bool foundPeople = false;
 
-    personToCount['start'] = items[0]['date'];
-    personToCount['end'] = items[items.length-1]['date'];
+//    personToCount['start'] = items[0]['date'];
+//    personToCount['end'] = items[items.length-1]['date'];
 
-
-    items.forEach((Map<String, dynamic> item){
+    items.forEach((Map<String, dynamic> item) {
       String from;
-      if(item.containsKey('from')){
+      if (item.containsKey('from')) {
         from = item['from'];
-        if(item['from'] is !String){
+        if (item['from'] is! String) {
           from = item['from']['mention_name'];
         }
-        if(!teamPeople.contains(from)){
-            foundPeople = true;
-            if(personToCount.containsKey(from)){
-              personToCount[from]++;
-            }
-            else{
-              personToCount[from]=1;
-            }
+        if (teamPeople.contains(from)) {
+          foundPeople = true;
+          if (personToCount.containsKey(from)) {
+            personToCount[from]++;
+          } else {
+            personToCount[from] = 1;
           }
-
+        }
       }
       //personToCount[item['from']] = 0;
-
     });
 
-    personToCount['foundPeople'] = foundPeople;
+    //personToCount['foundPeople'] = foundPeople;
     return personToCount;
   }
 
-  Future parseForDailyStats(r) async{
+  Future parseForDailyStats(r) async {
     transport.Response response = r;
     Map<String, dynamic> responseBody = response.body.asJson();
     List<dynamic> items = responseBody['items'];
@@ -94,20 +113,16 @@ class MetricsSink extends RequestSink {
     String dateString;
     Map<String, int> datesToCounts = {};
 
-
-    items.forEach((Map<String, dynamic> item){
+    items.forEach((Map<String, dynamic> item) {
       message = item['message'];
-      if(teamPeople.contains(item['from']['mention_name'])){
-
-      } else {
-        if(message.contains('?')){
+      if (teamPeople.contains(item['from']['mention_name'])) {} else {
+        if (message.contains('?')) {
           dateString = item['date'];
           DateTime dt = DateTime.parse(dateString);
           String dtString = '${dt.month}-${dt.day}-${dt.year}';
-          if(datesToCounts.containsKey(dtString)){
+          if (datesToCounts.containsKey(dtString)) {
             datesToCounts[dtString]++;
-          }
-          else{
+          } else {
             datesToCounts[dtString] = 1;
           }
         }
@@ -115,26 +130,10 @@ class MetricsSink extends RequestSink {
     });
 
     String dtc = '';
-    datesToCounts.forEach((String key, int value){
+    datesToCounts.forEach((String key, int value) {
       dtc += '$key,$value ';
     });
 
     return dtc;
   }
-
-
-
-  Future test() async {
-    Map<String, String> headers = {'Authorization':'Bearer R54dpHZGQV8HUAtjUIaEqlpCYEboJwEPl63AfZIz'};
-    return transport.Http.get(Uri.parse(
-        'https://api.hipchat.com/v2/room/2750828/history?max-results=1000&date=2018-01-11T01:53:07+00:00'),headers:headers)
-        .then(parseForTeamBreakdown);
-  }
-  /// Final initialization method for this instance.
-  ///
-  /// This method allows any resources that require asynchronous initialization to complete their
-  /// initialization process. This method is invoked after [setupRouter] and prior to this
-  /// instance receiving any requests.
-  @override
-  Future willOpen() async {}
 }

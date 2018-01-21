@@ -1,3 +1,6 @@
+import 'package:teammetrics/controller/hipchat_controller.dart';
+import 'package:teammetrics/controller/pr_controller.dart';
+import 'package:teammetrics/controller/repo_controller.dart';
 import 'teammetrics.dart';
 
 /// This class handles setting up this application.
@@ -30,11 +33,9 @@ class TeammetricsSink extends RequestSink {
   void setupRouter(Router router) {
     // Prefer to use `pipe` and `generate` instead of `listen`.
     // See: https://aqueduct.io/docs/http/request_controller/
-    router
-      .route("/example")
-      .listen((request) async {
-        return new Response.ok({"key": "value"});
-      });
+    router.route("/prs").generate(() => new PrController());
+    router.route("/repo").generate(() => new RepoController());
+    router.route("/support").generate(() => new HipchatController());
   }
 
   /// Final initialization method for this instance.
