@@ -14,7 +14,7 @@ class PrController extends HTTPController {
     List<String> ignoreAuthorsList = ignoreAuthors.split(',');
     final github = git.createGitHubClient(
         auth: new git.Authentication.withToken(
-            'c60f8dd2b6f2d8a8cdc606eda7eae9ea7b264319'));
+            'cd242d7cfed7230274fef75b9669a7d107fde02d'));
     List<String> repoList = repos.split(",");
     List<git.PullRequest> prs = [];
     for (var repoName in repoList) {
