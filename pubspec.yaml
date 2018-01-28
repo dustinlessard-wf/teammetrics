@@ -8,7 +8,11 @@ environment:
 
 dependencies:
   aqueduct: ^2.5.0+1
-  github: ^3.0.0
+  github:
+#    path: ../github.dart/
+    git:
+      url: git@github.com:dustinlessard-wf/github.dart.git
+      ref: enhancedList
   w_transport: ^3.0.0
 
 dev_dependencies:
