@@ -13,7 +13,7 @@ class PrtrendController extends HTTPController {
       @HTTPQuery("token") String token) async {
     List<String> repoList = repos.split(",");
     final github =
-    git.createGitHubClient(auth: new git.Authentication.withToken("0307ef3bbe0a06bb92c487cdd9f14b456551cb5e"));
+    git.createGitHubClient(auth: new git.Authentication.withToken(token));
     // date : average minutes to merge
 
     Map<DateTime, List<int>> datesToMinutes = {}; //{'':[4, 40, 2]}
