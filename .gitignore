@@ -1,0 +1,8 @@
+#OS
+.DS_Store
+
+#Pub
+.pub
+packages
+.packages
+build
