@@ -6,3 +6,6 @@
 packages
 .packages
 build
+
+#Aqueduct
+*.aqueduct.pid
