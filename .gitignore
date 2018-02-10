@@ -1,6 +1,9 @@
 #OS
 .DS_Store
 
+#Editor
+.vscode/*
+
 #Pub
 .pub
 packages
@@ -9,3 +12,4 @@ build
 
 #Aqueduct
 *.aqueduct.pid
+
