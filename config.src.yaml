@@ -1,2 +1,4 @@
 github:
-  apiToken: thisisatesttokenthatdoesnothing
+  apiConfig:
+    baseURL: https://localhost:9000
+    clientSecret: thisisatesttokenthatdoesnothing

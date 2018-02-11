@@ -1,8 +1,11 @@
-import 'package:teammetrics/controller/hipchat_controller.dart';
-import 'package:teammetrics/controller/pr_controller.dart';
-import 'package:teammetrics/controller/prtrend_controller.dart';
-import 'package:teammetrics/controller/repo_controller.dart';
-import 'teammetrics.dart';
+import './configuration/teammetrics_configuration.dart';
+import './controller/hipchat_controller.dart';
+import './controller/pr_controller.dart';
+import './controller/prtrend_controller.dart';
+import './controller/repo_controller.dart';
+import './service/github_service.dart';
+
+import './teammetrics.dart';
 
 /// This class handles setting up this application.
 ///
@@ -23,8 +26,14 @@ class TeammetricsSink extends RequestSink {
   ///
   /// Configuration of database connections, [HTTPCodecRepository] and other per-isolate resources should be done in this constructor.
   TeammetricsSink(ApplicationConfiguration appConfig) : super(appConfig) {
+    var configFilePath = appConfig.configurationFilePath;
+    teamMetricsConfiguration = new TeammetricsConfiguration(configFilePath);
+
+    RequestController.includeErrorDetailsInServerErrorResponses = true;
     logger.onRecord.listen((rec) => print("$rec ${rec.error ?? ""} ${rec.stackTrace ?? ""}"));
   }
+
+  TeammetricsConfiguration teamMetricsConfiguration;
 
   /// All routes must be configured in this method.
   ///
@@ -34,8 +43,9 @@ class TeammetricsSink extends RequestSink {
   void setupRouter(Router router) {
     // Prefer to use `pipe` and `generate` instead of `listen`.
     // See: https://aqueduct.io/docs/http/request_controller/
+    router.route("/prs").generate(() => new PrController(new GithubService(teamMetricsConfiguration.github)));
+
     router.route("/prtrend").generate(() => new PrtrendController());
-    router.route("/prs").generate(() => new PrController());
     router.route("/repo").generate(() => new RepoController());
     router.route("/support").generate(() => new HipchatController());
   }
