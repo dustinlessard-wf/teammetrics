@@ -1,4 +1,4 @@
 github:
   apiConfig:
     baseURL: https://api.github.com
-    clientSecret: 1ade9a5640754771fac7abb1fef1ac53b5ef4ff5
+    clientSecret: $GITHUB_ACCESS_TOKEN
