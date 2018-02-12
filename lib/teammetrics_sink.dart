@@ -41,9 +41,11 @@ class TeammetricsSink extends RequestSink {
   /// the router gets 'compiled' after this method completes and routes cannot be added later.
   @override
   void setupRouter(Router router) {
+    GithubService _githubService = new GithubService(teamMetricsConfiguration.github);
+
     // Prefer to use `pipe` and `generate` instead of `listen`.
     // See: https://aqueduct.io/docs/http/request_controller/
-    router.route("/prs").generate(() => new PrController(new GithubService(teamMetricsConfiguration.github)));
+    router.route("/prs").generate(() => new PrController(_githubService));
 
     router.route("/prtrend").generate(() => new PrtrendController());
     router.route("/repo").generate(() => new RepoController());

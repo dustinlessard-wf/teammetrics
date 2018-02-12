@@ -1,20 +1,31 @@
+import 'dart:async';
+
 import 'package:github/server.dart' as git;
 
 import '../configuration/github_configuration.dart';
 
 class GithubService {
-  GithubService(this.config);
-
   GithubConfiguration config;
 
   git.GitHub _client;
 
-  git.GitHub get client {
-    if (this._client == null) {
-      this._client = git.createGitHubClient(
-          auth: new git.Authentication.withToken(config.apiConfig.clientSecret), endpoint: config.apiConfig.baseURL);
+  GithubService(this.config) {
+    this._client = git.createGitHubClient(
+        auth: new git.Authentication.withToken(config.apiConfig.clientSecret), endpoint: config.apiConfig.baseURL);
+  }
+
+  git.GitHub get client => this._client;
+
+  Future<List<git.PullRequest>> getRepositoriesPullRequests(List<String> repositories) async {
+    List<git.PullRequest> pullRequests = [];
+
+    for (var repo in repositories) {
+      final repoSlug = new git.RepositorySlug(config.owner, repo);
+      var pullRequestStream = _client.pullRequests.list(repoSlug);
+      var fetchedPullRequests = await pullRequestStream.toList();
+      pullRequests.addAll(fetchedPullRequests);
     }
 
-    return this._client;
+    return pullRequests;
   }
 }
