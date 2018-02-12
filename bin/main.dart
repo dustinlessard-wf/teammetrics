@@ -2,8 +2,8 @@ import 'package:teammetrics/teammetrics.dart';
 
 Future main() async {
   var app = new Application<TeammetricsSink>()
-      ..configuration.configurationFilePath = "config.yaml"
-      ..configuration.port = 8000;
+    ..configuration.configurationFilePath = "config.yaml"
+    ..configuration.port = 8000;
 
   await app.start(numberOfInstances: 2);
 
