@@ -35,5 +35,5 @@ Future main() async {
       expect(response, hasResponse(200, contains(mockPr['created_at'])));
       expect(response, hasResponse(200, contains(mockPr['html_url'])));
     });
-  }, timeout: new Timeout(new Duration(minutes: 5)));
+  });
 }
