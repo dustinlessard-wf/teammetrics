@@ -1,0 +1,5 @@
+github:
+  owner: workiva
+  apiConfig:
+    baseURL: http://localhost:9000
+    clientSecret: thisisatesttokenthatdoesnothing

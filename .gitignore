@@ -1,0 +1,15 @@
+#OS
+.DS_Store
+
+#Editor
+.vscode/*
+
+#Pub
+.pub
+packages
+.packages
+build
+
+#Aqueduct
+*.aqueduct.pid
+

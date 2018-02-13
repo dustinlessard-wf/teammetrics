@@ -13,19 +13,15 @@ class HipchatController extends HTTPController {
   HipchatController() : super() {
     responseContentType = ContentType.HTML;
     configureWTransportForVM();
-    logger.onRecord.listen(
-        (rec) => print("$rec ${rec.error ?? ""} ${rec.stackTrace ?? ""}"));
+    logger.onRecord.listen((rec) => print("$rec ${rec.error ?? ""} ${rec.stackTrace ?? ""}"));
   }
 
   List<String> teamPeople = [];
-  Map<String, String> headers = {
-    'Authorization': 'Bearer R54dpHZGQV8HUAtjUIaEqlpCYEboJwEPl63AfZIz'
-  };
+  Map<String, String> headers = {'Authorization': 'Bearer R54dpHZGQV8HUAtjUIaEqlpCYEboJwEPl63AfZIz'};
 
   getRoomName(String roomId) async {
     return transport.Http
-        .get(Uri.parse('https://api.hipchat.com/v2/room/$roomId'),
-            headers: headers)
+        .get(Uri.parse('https://api.hipchat.com/v2/room/$roomId'), headers: headers)
         .then((transport.Response response) {
       return response.body.asJson()['name'];
     });
@@ -38,11 +34,9 @@ class HipchatController extends HTTPController {
 
     DateTime endDate = end != null ? DateTime.parse(end) : new DateTime.now();
     print(endDate.toIso8601String());
-    DateTime startDate = start!=null ? DateTime.parse(start) : new DateTime.now().subtract(new Duration(days:30));
+    DateTime startDate = start != null ? DateTime.parse(start) : new DateTime.now().subtract(new Duration(days: 30));
 
-
-    String headHtml =
-        '<head><script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>'
+    String headHtml = '<head><script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>'
         '<div id="piechart" style="width: 900px; height: 500px;"></div></head>';
 
     String roomName = await getRoomName(room);
@@ -65,8 +59,7 @@ class HipchatController extends HTTPController {
     String js =
         "google.charts.load('current', {'packages':['corechart']});google.charts.setOnLoadCallback(drawChart);function drawChart() {var data = google.visualization.arrayToDataTable([['Person', 'Messages  in Support'],$peopleMessages]);var options = {title: 'Support Participation in $roomName'};var chart = new google.visualization.PieChart(document.getElementById('piechart'));chart.draw(data, options);}";
 
-    return new Response.ok(
-        '<html>${headHtml}<script type="application/javascript">${js}</script><body></body></html>');
+    return new Response.ok('<html>${headHtml}<script type="application/javascript">${js}</script><body></body></html>');
   }
 
   Future<Map<String, dynamic>> parseForTeamBreakdown(r) async {

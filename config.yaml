@@ -1,0 +1,5 @@
+github:
+  owner: workiva
+  apiConfig:
+    baseURL: https://api.github.com
+    clientSecret: $GITHUB_ACCESS_TOKEN
